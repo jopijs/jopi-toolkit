@@ -431,7 +431,7 @@ export async function copyDirectory(srcDir: string, destDir: string): Promise<vo
  * Is optimized for large files.
  */
 export async function copyFile(srcPath: string, destPath: string): Promise<void> {
-    let stat = await getFileStat(srcPath);
+    /*let stat = await getFileStat(srcPath);
     if (!stat) return;
 
     // Assert the symlink exist.
@@ -450,7 +450,17 @@ export async function copyFile(srcPath: string, destPath: string): Promise<void>
         writeStream.on('finish', resolve);
 
         readStream.pipe(writeStream);
-    });
+    });*/
+
+    const stat = await getFileStat(srcPath);
+    if (!stat) return;
+
+    // Stat follows symlinks, so usually isSymbolicLink is false.
+    // If we wanted to check for symlinks we should use lstat.
+    // However, the intent seems to be to copy the file content or the target of the symlink.
+    // fs.copyFile does this by default.
+
+    await fs.copyFile(srcPath, destPath);
 }
 
 /**
