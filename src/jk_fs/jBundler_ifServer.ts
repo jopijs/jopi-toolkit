@@ -452,14 +452,10 @@ export async function copyFile(srcPath: string, destPath: string): Promise<void>
         readStream.pipe(writeStream);
     });*/
 
+    // > Impl compatible with a Windows bug.
+    
     const stat = await getFileStat(srcPath);
     if (!stat) return;
-
-    // Stat follows symlinks, so usually isSymbolicLink is false.
-    // If we wanted to check for symlinks we should use lstat.
-    // However, the intent seems to be to copy the file content or the target of the symlink.
-    // fs.copyFile does this by default.
-
     await fs.copyFile(srcPath, destPath);
 }
 
