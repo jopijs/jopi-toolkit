@@ -69,6 +69,12 @@ export interface ValueWithPriority<T> {
     priority: PriorityLevel;
 }
 
+/**
+ * Sorts a list of items based on their priority level in ascending order.
+ * Items with lower priority values (e.g., -200) will appear first in the returned array.
+ * @param values The list of items to sort, each containing a value and a priority.
+ * @returns An array of just the values, sorted by priority. Returns undefined if the input is undefined.
+ */
 export function sortByPriority<T>(values: undefined|ValueWithPriority<T>[]): undefined|(T[]) {
     if (values === undefined) return undefined;
 
