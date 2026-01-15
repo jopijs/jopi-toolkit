@@ -51,7 +51,7 @@ export const formater_dateTypeTitleSourceData: LogEntryFormater = (entry: LogEnt
     const date = formatDate1(entry.date);
 
     let json = entry.data ? JSON.stringify(entry.data) : "";
-    const title = (entry.title || "").padEnd(50, " ");
+    const title = String(entry.title || "").padEnd(50, " ");
 
     json = entry.logger + " |>" + json;
 
@@ -71,7 +71,7 @@ export const formater_dateTypeTitleSourceData: LogEntryFormater = (entry: LogEnt
 
 export const formater_typeTitleSourceData_colored: LogEntryFormater = (entry: LogEntry) => {
     let json = entry.data ? JSON.stringify(entry.data) : "";
-    const title = (entry.title || "").padEnd(50, " ");
+    const title = String(entry.title || "").padEnd(50, " ");
 
     json = entry.timeDif === undefined
         ? `${entry.logger} ${json}` : `${entry.logger} (${entry.timeDif} ms) ${json}`;
