@@ -29,6 +29,10 @@ interface InternalCacheEntry {
 
 export interface JkMemCacheOptions {
   /**
+   * Name of the cache instance (used for logs).
+   */
+  name: string;
+  /**
    * Maximum number of items in cache.
    * Default: Infinity
    */
@@ -50,13 +54,18 @@ export class JkMemCache {
   private _currentSize = 0;
   private _options: Required<JkMemCacheOptions>;
   private _intervalId: any = null;
+  private _name: string;
 
-  constructor(options: JkMemCacheOptions = {}) {
+  constructor(options: JkMemCacheOptions) {
     this._options = {
+      name: options.name,
       maxCount: options.maxCount ?? Infinity,
       maxSize: options.maxSize ?? 50 * 1024 * 1024,
       cleanupInterval: options.cleanupInterval ?? 60000,
     };
+    this._name = options.name;
+
+    logMemCache.info(`Cache [${this._name}] initialized`);
 
     if (this._options.cleanupInterval > 0) {
       this.startAutoCleanup();
@@ -201,6 +210,47 @@ export class JkMemCache {
   }
 
   /**
+   * Iterate over all valid keys.
+   */
+  public *keys(): Generator<string> {
+    const now = Date.now();
+    for (const [key, entry] of this._storage) {
+      if (entry.expiresAt && now > entry.expiresAt) {
+        this.delete(key);
+        continue;
+      }
+      yield key;
+    }
+  }
+
+  /**
+   * Iterate over keys starting with a prefix.
+   */
+  public *keysStartingWith(prefix: string): Generator<string> {
+    for (const key of this.keys()) {
+      if (key.startsWith(prefix)) yield key;
+    }
+  }
+
+  /**
+   * Iterate over keys ending with a suffix.
+   */
+  public *keysEndingWith(suffix: string): Generator<string> {
+    for (const key of this.keys()) {
+      if (key.endsWith(suffix)) yield key;
+    }
+  }
+
+  /**
+   * Iterate over keys containing a specific text.
+   */
+  public *keysContaining(text: string): Generator<string> {
+    for (const key of this.keys()) {
+      if (key.includes(text)) yield key;
+    }
+  }
+
+  /**
    * Check if we need to evict entries to fit a new one (or if limits are exceeded).
    */
   private needsEviction(incomingSize: number): boolean {
@@ -217,7 +267,7 @@ export class JkMemCache {
     const now = Date.now();
     let removedCount = 0;
 
-    logMemCache.info(`Recurrent GC started - ${JSON.stringify({
+    logMemCache.info(`Cache [${this._name}] Recurrent GC started - ${JSON.stringify({
       count: this._storage.size, 
       sizeMB: (this._currentSize / 1024 / 1024).toFixed(2)
     })}`);
@@ -230,7 +280,7 @@ export class JkMemCache {
     }
 
     if (removedCount > 0) {
-      logMemCache.info(`Recurrent GC finished - ${JSON.stringify({
+      logMemCache.info(`Cache [${this._name}] Recurrent GC finished - ${JSON.stringify({
         removed: removedCount,
         remaining: this._storage.size,
         sizeMB: (this._currentSize / 1024 / 1024).toFixed(2)
@@ -252,7 +302,7 @@ export class JkMemCache {
   private evictFor(requiredSpace: number) {
     const now = Date.now();
     
-    logMemCache.info(`GC Eviction started (Memory Pressure) - ${JSON.stringify({
+    logMemCache.info(`Cache [${this._name}] GC Eviction started (Memory Pressure) - ${JSON.stringify({
         requiredSpace,
         count: this._storage.size,
         sizeMB: (this._currentSize / 1024 / 1024).toFixed(2)
@@ -294,7 +344,7 @@ export class JkMemCache {
 
     // Helper to format log message
     const logGC = (step: string, extra: object = {}) => {
-        logMemCache.info(`[GC] ${step} - ${JSON.stringify({
+        logMemCache.info(`Cache [${this._name}] [GC] ${step} - ${JSON.stringify({
             ...extra,
             count: this._storage.size,
             sizeMB: (this._currentSize / 1024 / 1024).toFixed(2)
