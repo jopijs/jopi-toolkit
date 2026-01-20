@@ -114,6 +114,11 @@
       "types": "./src/jk_logs/index.ts",
       "bun": "./src/jk_logs/index.ts",
       "default": "./dist/jk_logs/index.js"
+    },
+    "./jk_memcache": {
+      "types": "./src/jk_memcache/index.ts",
+      "bun": "./src/jk_memcache/index.ts",
+      "default": "./dist/jk_memcache/index.js"
     }
   }
 }
