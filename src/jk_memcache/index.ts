@@ -14,17 +14,22 @@ export interface CacheEntryOptions {
    * Absolute expiration date.
    */
   expiresAt?: number;
+  /**
+   * Arbitrary metadata (optional).
+   */
+  meta?: any;
 }
 
 interface InternalCacheEntry {
   key: string;
-  value: string | ArrayBuffer;
+  value: string | ArrayBuffer | Uint8Array;
   type: 'string' | 'buffer' | 'json';
   size: number;
   createdAt: number;
   expiresAt: number | null;
   accessCount: number;
   importance: number;
+  meta: any;
 }
 
 export interface JkMemCacheOptions {
@@ -96,13 +101,20 @@ export class JkMemCache {
   /**
    * Add or update an item in the cache.
    */
-  public set(key: string, value: string | ArrayBuffer | object, options: CacheEntryOptions = {}) {
+  public set(key: string, value: string | ArrayBuffer | Uint8Array | object, options: CacheEntryOptions = {}) {
     // 1. Prepare new entry details
-    let storedValue: string | ArrayBuffer;
+    let storedValue: string | ArrayBuffer | Uint8Array;
     let type: 'string' | 'buffer' | 'json';
     let size = 0;
+    
+    // Meta size calculation
+    const metaSize = options.meta ? JSON.stringify(options.meta).length * 2 : 0;
 
     if (value instanceof ArrayBuffer) {
+      storedValue = value;
+      type = 'buffer';
+      size = value.byteLength;
+    } else if (value instanceof Uint8Array) {
       storedValue = value;
       type = 'buffer';
       size = value.byteLength;
@@ -116,8 +128,8 @@ export class JkMemCache {
       size = (storedValue as string).length * 2;
     }
 
-    // Overhead for object structure (approximate)
-    size += 100; 
+    // Overhead for object structure (approximate) + Meta size
+    size += 100 + metaSize; 
 
     // 2. Check overlap
     if (this._storage.has(key)) {
@@ -125,7 +137,9 @@ export class JkMemCache {
     }
 
     // 3. Calculate Expiration
+    
     let expiresAt: number | null = null;
+
     if (options.expiresAt) {
       expiresAt = options.expiresAt;
     } else if (options.ttl) {
@@ -141,6 +155,7 @@ export class JkMemCache {
       expiresAt,
       accessCount: 0,
       importance: options.importance ?? 1,
+      meta: options.meta,
     };
 
     // 4. Check if item is too big for the cache entirely
@@ -177,6 +192,27 @@ export class JkMemCache {
     } else {
       return entry.value as T;
     }
+  }
+
+  /**
+   * Retrieve an item from the cache with its metadata.
+   */
+  public getWithMeta<T = any>(key: string): { value: T; meta: any } | null {
+    const entry = this._storage.get(key);
+    if (!entry) return null;
+
+    entry.accessCount++;
+
+    let value: T;
+    if (entry.type === 'buffer') {
+      value = entry.value as T;
+    } else if (entry.type === 'json') {
+      value = JSON.parse(entry.value as string) as T;
+    } else {
+      value = entry.value as T;
+    }
+
+    return { value, meta: entry.meta };
   }
 
   /**
