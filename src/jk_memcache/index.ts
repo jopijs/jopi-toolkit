@@ -179,11 +179,16 @@ export class JkMemCache {
   /**
    * Retrieve an item from the cache.
    */
-  public get<T = any>(key: string): T | null {
+  public get<T = any>(key: string, peek = false): T | null {
     const entry = this._storage.get(key);
     if (!entry) return null;
 
-    entry.accessCount++;
+    if (entry.expiresAt && entry.expiresAt < Date.now()) {
+      this.delete(key);
+      return null;
+    }
+
+    if (!peek) entry.accessCount++;
 
     if (entry.type === 'buffer') {
       return entry.value as T;
@@ -197,11 +202,16 @@ export class JkMemCache {
   /**
    * Retrieve an item from the cache with its metadata.
    */
-  public getWithMeta<T = any>(key: string): { value: T; meta: any } | null {
+  public getWithMeta<T = any>(key: string, peek = false): { value: T; meta: any } | null {
     const entry = this._storage.get(key);
     if (!entry) return null;
 
-    entry.accessCount++;
+    if (entry.expiresAt && entry.expiresAt < Date.now()) {
+      this.delete(key);
+      return null;
+    }
+
+    if (!peek) entry.accessCount++;
 
     let value: T;
     if (entry.type === 'buffer') {
@@ -213,6 +223,22 @@ export class JkMemCache {
     }
 
     return { value, meta: entry.meta };
+  }
+
+  /**
+   * Check if an item exists in the cache and is not expired.
+   * Does not increment accessCount.
+   */
+  public has(key: string): boolean {
+    const entry = this._storage.get(key);
+    if (!entry) return false;
+
+    if (entry.expiresAt && entry.expiresAt < Date.now()) {
+      this.delete(key);
+      return false;
+    }
+
+    return true;
   }
 
   /**
