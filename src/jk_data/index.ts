@@ -24,7 +24,7 @@ export type JFieldConstraintType =
     | "$nin"   // Not in an array of values
     | "$like"  // Like search %endsWith or startsWith%
 
-export interface JRowsFilter {
+export interface JGlobalFilter {
     field?: string;
     value: string;
 }
@@ -36,7 +36,7 @@ export interface JPageExtraction {
 
 export interface JRowArrayFilter {
     page?: JPageExtraction;
-    filter?: JRowsFilter;
+    filter?: JGlobalFilter;
     sorting?: JFieldSorting[];
     fieldFilters?: Record<string, JFieldFilter[]>;
 }
