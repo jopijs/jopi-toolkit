@@ -44,7 +44,7 @@ export interface JRowArrayFilter {
 /**
  * Filter the row content according to rules.
  */
-export function simpleRowArrayFilter(rows: any[], params: JRowArrayFilter): JTableDs_ReadResult {
+function simpleRowArrayFilter(rows: any[], params: JRowArrayFilter): JNamedTableReader_ReadResult {
     // > Apply filter.
 
     if (params.filter) {
@@ -115,37 +115,40 @@ export function simpleRowArrayFilter(rows: any[], params: JRowArrayFilter): JTab
 
 //endregion
 
-//region JTableDs
+//region JNamedTableReader
 
-export interface JTableDs_ReadParams extends JRowArrayFilter {
+export interface JNamedTableReader_ReadParams extends JRowArrayFilter {
 }
 
-export interface JTableDs_ReadResult {
+export interface JNamedTableReader_ReadResult {
     rows: any[];
     total?: number;
     offset?: number;
 }
 
-export interface JTableDs {
-    get name(): string;
+export interface JTableReader {
     get schema(): Schema;
-    read(params: JTableDs_ReadParams): Promise<JTableDs_ReadResult>;
+    read(params: JNamedTableReader_ReadParams): Promise<JNamedTableReader_ReadResult>;
 }
 
-export class JTableDs_UseArray implements JTableDs {
-    public constructor(public readonly name: string, public readonly schema: Schema, private readonly rows: any[]) {
+export interface JNamedTableReader extends JTableReader {
+    get name(): string;
+}
+
+export class JTableReader_UseArray implements JTableReader {
+    public constructor(public readonly schema: Schema, private readonly rows: any[]) {
     }
 
-    async read(params: JTableDs_ReadParams): Promise<JTableDs_ReadResult> {
+    async read(params: JNamedTableReader_ReadParams): Promise<JNamedTableReader_ReadResult> {
         return simpleRowArrayFilter(this.rows, params);
     }
 }
 
-export class JTableDs_HttpProxy implements JTableDs {
+export class JNamedTableReader_HttpProxy implements JNamedTableReader {
     public constructor(public readonly name: string, private readonly url: string, public readonly schema: Schema) {
     }
 
-    async read(params: JTableDs_ReadParams): Promise<JTableDs_ReadResult> {
+    async read(params: JNamedTableReader_ReadParams): Promise<JNamedTableReader_ReadResult> {
         let toSend = {dsName: this.name, read: params};
 
         let res = await fetch(this.url, {
@@ -159,7 +162,7 @@ export class JTableDs_HttpProxy implements JTableDs {
         }
 
         let asJson = await res.json();
-        return asJson as JTableDs_ReadResult;
+        return asJson as JNamedTableReader_ReadResult;
     }
 }
 
