@@ -516,6 +516,7 @@ export const join = path.join;
 export const resolve = path.resolve;
 export const dirname = path.dirname;
 export const extname = path.extname;
+export const relative = path.relative;
 
 export const sep = path.sep;
 export const isAbsolute = path.isAbsolute;
