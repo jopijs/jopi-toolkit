@@ -202,18 +202,14 @@ export class JkMemCache {
   /**
    * Retrieve an item from the cache with its metadata.
    */
-  public getWithMeta<T = any>(key: string, peek = false): { value: T; meta: any } | null {
+  public getWithMeta<T = any>(key: string, peek = false): { value: T; meta: any; size: number } | null {
     const entry = this._storage.get(key);
+    
     if (!entry) return null;
-
-    if (entry.expiresAt && entry.expiresAt < Date.now()) {
-      this.delete(key);
-      return null;
-    }
-
     if (!peek) entry.accessCount++;
 
     let value: T;
+    
     if (entry.type === 'buffer') {
       value = entry.value as T;
     } else if (entry.type === 'json') {
@@ -222,7 +218,7 @@ export class JkMemCache {
       value = entry.value as T;
     }
 
-    return { value, meta: entry.meta };
+    return { value, meta: entry.meta, size: entry.size };
   }
 
   /**
