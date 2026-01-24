@@ -410,8 +410,9 @@ export interface ScFieldStore {
 }
 
 export interface ScField<T, Opt extends boolean> {
-    title: string;
+    id: string;
     type: string;
+    title?: string|Record<string, string>;
 
     description?: string;
     default?: T;
@@ -451,7 +452,7 @@ export interface ScField<T, Opt extends boolean> {
 export type Field = ScField<any, any>;
 export type SchemaFieldInfos = Field;
 
-type OnlyInfos<T> = Omit<T, "title" | "optional" | "type">;
+type OnlyInfos<T> = Omit<T, "id" | "optional" | "type">;
 
 //endregion
 
@@ -469,13 +470,13 @@ export interface ScString<Opt extends boolean = boolean> extends ScField<string,
     placeholder?: string;
 }
 
-export function string<Opt extends boolean>(title: string, optional: Opt, infos?: OnlyInfos<ScString<Opt>>): ScString<Opt> {
+export function string<Opt extends boolean>(id: string, optional: Opt, infos?: OnlyInfos<ScString<Opt>>): ScString<Opt> {
     if (!optional) {
         if (!infos) infos = {};
         if (infos.minLength===undefined) infos.minLength = 1;
     }
 
-    return {...infos, title, optional, type: "string"};
+    return {...infos, id, optional, type: "string"};
 }
 
 byTypeValidator["string"] = (v,f) => {
@@ -509,8 +510,8 @@ export interface ScBoolean<Opt extends boolean = boolean> extends ScField<boolea
     errorMessage_requireFalse?: string;
 }
 
-export function boolean<Opt extends boolean>(title: string, optional: Opt, infos?: OnlyInfos<ScBoolean<Opt>>): ScBoolean<Opt> {
-    return {...infos, title, optional, type: "boolean"};
+export function boolean<Opt extends boolean>(id: string, optional: Opt, infos?: OnlyInfos<ScBoolean<Opt>>): ScBoolean<Opt> {
+    return {...infos, id, optional, type: "boolean"};
 }
 
 byTypeValidator["boolean"] = (v, f) => {
@@ -569,8 +570,8 @@ export interface ScNumber<Opt extends boolean = boolean> extends ScField<number,
     currency?: string;
 }
 
-export function number<Opt extends boolean>(title: string, optional: Opt, infos?: OnlyInfos<ScNumber<Opt>>): ScNumber<Opt> {
-    return {...infos, title, optional, type: "number"};
+export function number<Opt extends boolean>(id: string, optional: Opt, infos?: OnlyInfos<ScNumber<Opt>>): ScNumber<Opt> {
+    return {...infos, id, optional, type: "number"};
 }
 
 export function formatNumber(value: string, fieldNumber: ScNumber, defaultLocalFormat: string = "en-US", defaultCurrency: string = "USD") {
@@ -611,16 +612,16 @@ byTypeValidator["number"] = (v,f) => {
 
 //region Currency
 
-export function currency<Opt extends boolean>(title: string, optional: Opt, infos?: OnlyInfos<ScNumber<Opt>>): ScNumber<Opt> {
-    return number(title, optional, {...infos, displayType: "currency"})
+export function currency<Opt extends boolean>(id: string, optional: Opt, infos?: OnlyInfos<ScNumber<Opt>>): ScNumber<Opt> {
+    return number(id, optional, {...infos, displayType: "currency"})
 }
 
 //endregion
 
 //region Percent
 
-export function percent<Opt extends boolean>(title: string, optional: Opt, infos?: OnlyInfos<ScNumber<Opt>>): ScNumber<Opt> {
-    return number(title, optional, {...infos, displayType: "percent"})
+export function percent<Opt extends boolean>(id: string, optional: Opt, infos?: OnlyInfos<ScNumber<Opt>>): ScNumber<Opt> {
+    return number(id, optional, {...infos, displayType: "percent"})
 }
 
 
@@ -645,8 +646,8 @@ export interface ScFile<Opt extends boolean> extends ScField<File[], Opt> {
     errorMessage_maxFileSize?: string;
 }
 
-export function file<Opt extends boolean>(title: string, optional: Opt, infos?: OnlyInfos<ScFile<Opt>>): ScFile<Opt> {
-    return {...infos, title, optional, type: "file"};
+export function file<Opt extends boolean>(id: string, optional: Opt, infos?: OnlyInfos<ScFile<Opt>>): ScFile<Opt> {
+    return {...infos, id, optional, type: "file"};
 }
 
 //endregion
