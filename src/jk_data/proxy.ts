@@ -92,6 +92,6 @@ export class Proxy implements JDataTable {
     }
 }
 
-export function toDataTableProxy(params: ProxyParams, browserActions: JopiTableBrowserActions): JDataTable {
-    return new Proxy(params, browserActions);
+export function toDataTableProxy(params: ProxyParams, browserActions?: JopiTableBrowserActions): JDataTable {
+    return new Proxy(params, browserActions || {});
 }

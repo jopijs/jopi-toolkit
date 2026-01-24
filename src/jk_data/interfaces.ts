@@ -61,7 +61,6 @@ export interface JActionDef {
 export interface JopiDataTable {
     readonly schema: Schema;
     readonly actions?: JActionDef[];
-    checkRoles?: (action: string, userRoles: string[]) => boolean;
     read(params: JDataReadParams): Promise<JDataReadResult>;
 }
 
