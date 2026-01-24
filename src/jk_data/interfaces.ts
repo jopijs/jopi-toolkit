@@ -1,5 +1,4 @@
 import { type Schema } from "jopi-toolkit/jk_schema";
-import { type JRowAction } from "./jBundler_ifServer.ts";
 
 export interface JFieldSorting {
     id: string;
@@ -54,19 +53,16 @@ export interface JDataReadResult {
     offset?: number;
 }
 
-export interface JDataBinding {
+export interface JopiDataTable {
     readonly schema: Schema;
-
-    readonly rowActions?: JRowAction[];
-
-    read(params: JDataReadParams): Promise<JDataReadResult>;
-
+    readonly actions?: string[];
     checkRoles?: (action: string, userRoles: string[]) => boolean;
+    read(params: JDataReadParams): Promise<JDataReadResult>;
 }
 
-export interface JDataTable extends JDataBinding {
+export interface JDataTable extends JopiDataTable {
     readonly name: string;
-    executeAction: (rows: any[], actionName: string, context: IActionContext) => Promise<void>
+    executeAction?: (rows: any[], actionName: string, context: IActionContext) => Promise<void>
 }
 
 export interface JActionPreProcessParams {
@@ -83,10 +79,7 @@ export interface JActionPostProcessParams {
     context: IActionContext;
 }
 
-export interface JRowActionBase {
-    name: string;
-    title?: string | Record<string, string>;
-    
-    preProcess?: (params: JActionPreProcessParams) => Promise<JActionPreProcessResult|void>
-    postProcess?: (params: JActionPostProcessParams) => Promise<void>
-}
+export type JopiTableBrowserActions = Record<string, {
+    pre?: (params: JActionPreProcessParams) => Promise<JActionPreProcessResult|void>,
+    post?: (params: JActionPostProcessParams) => Promise<void>;
+}>
