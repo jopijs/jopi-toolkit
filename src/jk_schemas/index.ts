@@ -414,7 +414,7 @@ export interface ScField<T, Opt extends boolean> {
     type: string;
     title?: string|Record<string, string>;
 
-    description?: string;
+    description?: string|Record<string, string>;
     default?: T;
     optional?: Opt;
 
@@ -467,7 +467,7 @@ export interface ScString<Opt extends boolean = boolean> extends ScField<string,
     maxLength?: number;
     errorMessage_maxLength?: string;
 
-    placeholder?: string;
+    placeholder?: string|Record<string, string>;
 }
 
 export function string<Opt extends boolean>(id: string, optional: Opt, infos?: OnlyInfos<ScString<Opt>>): ScString<Opt> {
