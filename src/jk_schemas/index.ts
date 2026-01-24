@@ -251,17 +251,16 @@ class SchemaImpl<T extends SchemaDescriptor> implements Schema {
     }
 }
 
-export interface SchemaDescriptor  {
-    [field: string]: Field;
-}
+export type SchemaDescriptor = Record<string, Field>;
 
 export interface SchemaMeta {
     title?: string;
     description?: string;
-    [key: string]: any;
     
     normalize?: (allValues: any, checkHelper: ValueCheckingHelper) => void;
     validate?: (allValues: any, checkHelper: ValueCheckingHelper) => void;
+
+    [key: string]: any;
 }
 
 export interface SchemaInfo {

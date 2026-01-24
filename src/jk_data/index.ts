@@ -1,50 +1,15 @@
-import {type Schema} from "jopi-toolkit/jk_schema";
+import {type Schema, schema} from "jopi-toolkit/jk_schema";
+import type { IActionContext, JDataBinding, JDataReadParams, JDataReadResult, JDataTable, JRowArrayFilter } from "./interfaces.ts";
+import type { JRowAction } from "./jBundler_ifServer.ts";
+export * from "./jBundler_ifServer.ts";
+export * from "./interfaces.ts";
 
 //region Rows Arrays
-
-export interface JFieldSorting {
-    id: string;
-    desc: boolean;
-}
-
-export interface JFieldFilter {
-    value?: string | number | boolean;
-    constraint: JFieldConstraintType;
-    caseSensitive?: boolean;
-}
-
-export type JFieldConstraintType =
-    | "$eq"    // Equals
-    | "$ne"    // Not equals
-    | "$gt"    // Greater than
-    | "$gte"   // Greater than or equals
-    | "$lt"    // Less than
-    | "$lte"   // Less than or equals
-    | "$in"    // In an array of values
-    | "$nin"   // Not in an array of values
-    | "$like"  // Like search %endsWith or startsWith%
-
-export interface JGlobalFilter {
-    field?: string;
-    value: string;
-}
-
-export interface JPageExtraction {
-    pageIndex: number;
-    pageSize: number;
-}
-
-export interface JRowArrayFilter {
-    page?: JPageExtraction;
-    filter?: JGlobalFilter;
-    sorting?: JFieldSorting[];
-    fieldFilters?: Record<string, JFieldFilter[]>;
-}
 
 /**
  * Filter the row content according to rules.
  */
-function simpleRowArrayFilter(rows: any[], params: JRowArrayFilter): JNamedTableReader_ReadResult {
+function simpleRowArrayFilter(rows: any[], params: JRowArrayFilter): JDataReadResult {
     // > Apply filter.
 
     if (params.filter) {
@@ -115,40 +80,45 @@ function simpleRowArrayFilter(rows: any[], params: JRowArrayFilter): JNamedTable
 
 //endregion
 
-//region JNamedTableReader
+//region JDataBinding
 
-export interface JNamedTableReader_ReadParams extends JRowArrayFilter {
-}
-
-export interface JNamedTableReader_ReadResult {
-    rows: any[];
-    total?: number;
-    offset?: number;
-}
-
-export interface JTableReader {
-    get schema(): Schema;
-    read(params: JNamedTableReader_ReadParams): Promise<JNamedTableReader_ReadResult>;
-}
-
-export interface JNamedTableReader extends JTableReader {
-    get name(): string;
-}
-
-export class JTableReader_UseArray implements JTableReader {
+export class JDataBinding_UseArray implements JDataBinding {
     public constructor(public readonly schema: Schema, private readonly rows: any[]) {
     }
 
-    async read(params: JNamedTableReader_ReadParams): Promise<JNamedTableReader_ReadResult> {
+    async read(params: JDataReadParams): Promise<JDataReadResult> {
         return simpleRowArrayFilter(this.rows, params);
     }
 }
 
-export class JNamedTableReader_HttpProxy implements JNamedTableReader {
-    public constructor(public readonly name: string, private readonly url: string, public readonly schema: Schema) {
+export interface JDataBinding_HttpProxyParams {
+    name: string;
+    apiUrl: string;
+    schema: { meta: any; desc: any; };
+    rowActions?: JHttpRowAction[];
+    checkRoles?: (action: string, userRoles: string[]) => boolean;
+}
+
+export interface JHttpRowAction extends Omit<JRowAction, "serverAction"> {
+    hasServerAction: boolean;
+}
+
+export class JDataBinding_HttpProxy implements JDataTable {
+    readonly name: string;
+    readonly schema: Schema;
+    private readonly url: string;
+    readonly rowActions?: JHttpRowAction[];
+    readonly checkRoles?: (action: string, userRoles: string[]) => boolean;
+    
+    public constructor(params: JDataBinding_HttpProxyParams) {
+        this.name = params.name;
+        this.url = params.apiUrl;
+        this.schema = schema(params.schema.desc, params.schema.meta);
+        this.rowActions = params.rowActions;
+        this.checkRoles = params.checkRoles;
     }
 
-    async read(params: JNamedTableReader_ReadParams): Promise<JNamedTableReader_ReadResult> {
+    async read(params: JDataReadParams): Promise<JDataReadResult> {
         let toSend = {dsName: this.name, read: params};
 
         let res = await fetch(this.url, {
@@ -162,7 +132,28 @@ export class JNamedTableReader_HttpProxy implements JNamedTableReader {
         }
 
         let asJson = await res.json();
-        return asJson as JNamedTableReader_ReadResult;
+        return asJson as JDataReadResult;
+    }
+
+    async executeAction(rows: any[], actionName: string, context: IActionContext) {
+        let actionEntry = this.rowActions?.find(a => a.name === actionName);
+        if (!actionEntry) return;
+
+        if (actionEntry.preProcess) {
+            let res = await actionEntry.preProcess?.({ rows });
+
+            if (res) {
+                if (res.rows !== undefined) rows = res.rows;
+            }
+        }
+
+        if (actionEntry.hasServerAction) {
+            // TODO
+        }
+
+        if (actionEntry.postProcess) {
+            await actionEntry.postProcess?.({ rows, context });
+        }
     }
 }
 
