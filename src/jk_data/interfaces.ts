@@ -53,33 +53,51 @@ export interface JDataReadResult {
     offset?: number;
 }
 
+export interface JActionDef {
+    id: string;
+    lang: Record<string, string>;
+}
+
 export interface JopiDataTable {
     readonly schema: Schema;
-    readonly actions?: string[];
+    readonly actions?: JActionDef[];
     checkRoles?: (action: string, userRoles: string[]) => boolean;
     read(params: JDataReadParams): Promise<JDataReadResult>;
 }
 
 export interface JDataTable extends JopiDataTable {
     readonly name: string;
-    executeAction?: (rows: any[], actionName: string, context: IActionContext) => Promise<void>
+    executeAction?: (rows: any[], actionName: string, context?: IActionContext) => Promise<JActionResult|void>
 }
 
 export interface JActionPreProcessParams {
     rows: any[];
+    context?: IActionContext;
 }
 
-export interface JActionPreProcessResult {
+export interface JActionResult {
+    isOk?: boolean;
+    errorCode?: string;
+    errorMessage?: string;
+    userMessage?: string;
+    data?: any;
+}
+
+export interface JActionPreProcessResult extends JActionResult {
     rows?: any[];
-    context: IActionContext;
 }
 
 export interface JActionPostProcessParams {
-    rows?: any[];
-    context: IActionContext;
+    rows: any[];
+    context?: IActionContext;
+    
+    data?: any[];
+    userMessage?: string;
 }
 
 export type JopiTableBrowserActions = Record<string, {
-    pre?: (params: JActionPreProcessParams) => Promise<JActionPreProcessResult|void>,
-    post?: (params: JActionPostProcessParams) => Promise<void>;
+    onError?: (params: JActionResult) => Promise<void>,
+    action?: (params: JActionPreProcessParams) => Promise<JActionPreProcessResult|void>,
+    afterServerCall?: (params: JActionPostProcessParams) => Promise<void>;
+    disableServerCall?: boolean;
 }>
