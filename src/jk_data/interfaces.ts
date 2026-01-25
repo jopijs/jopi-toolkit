@@ -1,4 +1,5 @@
 import { type Schema } from "jopi-toolkit/jk_schema";
+import type {Translatable} from "../jk_tools";
 
 export interface JFieldSorting {
     id: string;
@@ -55,7 +56,8 @@ export interface JDataReadResult {
 
 export interface JActionDef {
     id: string;
-    lang: Record<string, string>;
+    title?: Translatable;
+    separator?: boolean;
 }
 
 export interface JopiDataTable {

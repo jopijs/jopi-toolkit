@@ -83,8 +83,6 @@ export class Proxy implements JDataTable {
     }
 
     async callServer(data: any): Promise<any> {
-        debugger;
-
         let res = await fetch(this.url, {
             method: "POST",
             headers: {"Content-Type": "application/json"},
