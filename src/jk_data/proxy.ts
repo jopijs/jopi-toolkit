@@ -29,6 +29,13 @@ export class Proxy implements JDataTable {
         return asJson as JDataReadResult;
     }
 
+    isActionEnabled(actionName: string, rows: any[], context?: IActionContext): boolean {
+        let actionEntry = this.browserActions[actionName];
+        if (!actionEntry) return false;
+        if (!actionEntry.canEnable) return true;
+        return actionEntry.canEnable(rows, context);
+    }
+
     async executeAction(rows: any[], actionName: string, context?: IActionContext): Promise<JActionResult|void> {
         async function processError(res: JActionResult | undefined) {
             if (!res) return true;

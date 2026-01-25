@@ -1,5 +1,7 @@
 //region Validation
 
+import type { Translatable } from "jopi-toolkit/jk_tools";
+
 /**
  * Throwing this error allows it to be caught
  * when validating an object.
@@ -250,8 +252,12 @@ class SchemaImpl<T extends SchemaDescriptor> implements Schema {
 export type SchemaDescriptor = Record<string, Field>;
 
 export interface SchemaMeta {
-    title?: string;
-    description?: string;
+    /**
+     * The title of this schema.
+     * Can be translated to languages.
+     */
+    title?: Translatable;
+    description?: Translatable;
     
     normalize?: (allValues: any, checkHelper: ValueCheckingHelper) => void;
     validate?: (allValues: any, checkHelper: ValueCheckingHelper) => void;
@@ -412,9 +418,9 @@ export interface ScFieldStore {
 export interface ScField<T, Opt extends boolean> {
     id: string;
     type: string;
-    title?: string|Record<string, string>;
+    title?: Translatable;
 
-    description?: string|Record<string, string>;
+    description?: Translatable;
     default?: T;
     optional?: Opt;
 
@@ -467,7 +473,7 @@ export interface ScString<Opt extends boolean = boolean> extends ScField<string,
     maxLength?: number;
     errorMessage_maxLength?: string;
 
-    placeholder?: string|Record<string, string>;
+    placeholder?: Translatable;
 }
 
 export function string<Opt extends boolean>(id: string, optional: Opt, infos?: OnlyInfos<ScString<Opt>>): ScString<Opt> {

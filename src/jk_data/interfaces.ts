@@ -66,7 +66,8 @@ export interface JopiDataTable {
 
 export interface JDataTable extends JopiDataTable {
     readonly name: string;
-    executeAction?: (rows: any[], actionName: string, context?: IActionContext) => Promise<JActionResult|void>
+    executeAction?: (rows: any[], actionName: string, context?: IActionContext) => Promise<JActionResult | void>
+    isActionEnabled?: (actionName: string, rows: any[], context?: IActionContext) => boolean;
 }
 
 export interface JActionPreProcessParams {
@@ -94,9 +95,44 @@ export interface JActionPostProcessParams {
     userMessage?: string;
 }
 
-export type JopiTableBrowserActions = Record<string, {
+/**
+ * Defines the behavior of a custom action in the browser for a Jopi table.
+ * allowing to hook into the action lifecycle (pre-process, server call, post-process).
+ */
+export interface JopiTableBrowserActionItem {
+    /**
+     * Callback invoked when an error occurs during the action execution.
+     * This can be triggered by a failure in the `action` handler or a server-side error.
+     */
     onError?: (params: JActionResult) => Promise<void>,
+
+    /**
+     * The main client-side action handler.
+     * - Can be used to perform checks or data transformation before sending to the server.
+     * - Can be used as a standalone action if `disableServerCall` is true.
+     * - Return `void` to proceed with the default flow.
+     * - Return a `JActionPreProcessResult` to control flow (e.g., stop execution if `isOk` is false) or modify data sent to server.
+     */
     action?: (params: JActionPreProcessParams) => Promise<JActionPreProcessResult|void>,
+
+    /**
+     * Callback invoked after the server-side action has successfully completed.
+     * Useful for showing notifications, refreshing data, or triggering other UI updates.
+     */
     afterServerCall?: (params: JActionPostProcessParams) => Promise<void>;
+
+    /**
+     * Function to determine if the action should be enabled/clickable.
+     * Based on the currently selected rows and the current action context.
+     * If not provided, the action is assumed to be always enabled.
+     */
+    canEnable?: (rows: any[], context?: IActionContext) => boolean;
+
+    /**
+     * If set to true, the framework will NOT assume there is a corresponding server-side action to call.
+     * Use this for actions that are purely client-side (e.g., "Copy to clipboard").
+     */
     disableServerCall?: boolean;
-}>
+}
+
+export type JopiTableBrowserActions = Record<string, JopiTableBrowserActionItem>
