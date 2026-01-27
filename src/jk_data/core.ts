@@ -7,7 +7,7 @@ export * from "./interfaces.ts";
 /**
  * Filter the row content according to rules.
  */
-function simpleRowArrayFilter(rows: any[], params: JRowArrayFilter): JDataReadResult {
+export function simpleRowArrayFilter(rows: any[], params: JRowArrayFilter): JDataReadResult {
     // > Apply filter.
 
     if (params.filter) {
