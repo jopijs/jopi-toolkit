@@ -291,12 +291,22 @@ export function getCompiledCodeDir(): string {
     return rootDir;
 }
 
+export function toSourceCodeDir(itemPath: string): string {
+    const compiledDir = getCompiledCodeDir();
+
+    if (itemPath.startsWith(compiledDir)) {
+        return getSourceCodeDir() + itemPath.substring(compiledDir.length);
+    }
+
+    return itemPath;
+}
+
 export function getCompiledFilePathFor(sourceFilePath: string, replaceExtension = true): string {
     const compiledCodeDir = getCompiledCodeDir();
     const sourceCodeDir = getSourceCodeDir();
 
     if (!sourceFilePath.startsWith(sourceCodeDir)) {
-        throw new Error("jopi-loader - The source file must be in the source code directory: " + sourceFilePath);
+        return sourceFilePath;
     }
 
     let filePath = sourceFilePath.substring(sourceCodeDir.length);
@@ -321,7 +331,7 @@ export function getSourcesCodePathFor(compiledFilePath: string): string {
     const sourceCodeDir = getSourceCodeDir();
 
     if (!compiledFilePath.startsWith(compiledCodeDir)) {
-        throw new Error("jopi-loader - The compiled file must be in the compiled code directory: " + compiledFilePath);
+        return compiledCodeDir;
     }
 
     let filePath =  jk_fs.join(sourceCodeDir, compiledFilePath.substring(compiledCodeDir.length));
