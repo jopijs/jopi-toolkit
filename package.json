@@ -119,6 +119,11 @@
       "types": "./src/jk_memcache/index.ts",
       "bun": "./src/jk_memcache/index.ts",
       "default": "./dist/jk_memcache/index.js"
+    },
+    "./jk_dates": {
+      "types": "./src/jk_dates/index.ts",
+      "bun": "./src/jk_dates/index.ts",
+      "default": "./dist/jk_dates/index.js"
     }
   }
 }

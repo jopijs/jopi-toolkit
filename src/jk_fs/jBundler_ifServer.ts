@@ -172,6 +172,15 @@ export async function writeTextToFile(filePath: string, text: string, createDir:
     await fs.writeFile(filePath, text, {encoding: 'utf8', flag: 'w'});
 }
 
+export async function appendTextToFile(filePath: string, text: string): Promise<void> {
+    try {
+        await fs.appendFile(filePath, text, {encoding: 'utf8'});
+    } catch {
+        await mkDir(path.dirname(filePath));
+        await fs.appendFile(filePath, text, {encoding: 'utf8'});
+    }
+}
+
 export function writeTextToFileSync(filePath: string, text: string, createDir: boolean = true): void {
     if (createDir) {
         try {
