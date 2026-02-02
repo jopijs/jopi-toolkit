@@ -1,7 +1,7 @@
 // noinspection JSUnusedGlobalSymbols
 
 import fs from "node:fs/promises";
-import fss, {createReadStream, createWriteStream} from "node:fs";
+import fss, {createReadStream} from "node:fs";
 import {fileURLToPath as n_fileURLToPath, pathToFileURL as n_pathToFileURL } from "node:url";
 import {lookup} from "mime-types";
 import {Readable} from "node:stream";
