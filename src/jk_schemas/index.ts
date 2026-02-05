@@ -217,6 +217,10 @@ class SchemaImpl<T extends SchemaDescriptor> implements Schema {
     toJson(): SchemaInfo {
         return toJson(this);
     }
+    
+    toJsonValidationSchema(): any {
+        return toJsonValidationSchema(this);
+    }
 
     addDataNormalizer(f: (allValues: any, checkHelper: ValueCheckingHelper) => void): this {
         if (!this.schemaMeta.normalize) {
@@ -277,6 +281,11 @@ export interface Schema extends SchemaInfo {
     toJson(): SchemaInfo;
 
     /**
+     * Get a JSON Schema compatible object (with x-jopi extensions).
+     */
+    toJsonValidationSchema(): any;
+
+    /**
      * Add a function whose role is to normalize the data.
      *
      * Cumulating: if a normalize function has already been added,
@@ -295,6 +304,78 @@ export interface Schema extends SchemaInfo {
 
 export function toJson(schema: Schema): SchemaInfo {
     return schema;
+}
+
+export function toJsonValidationSchema(schema: Schema): any {
+    const properties: Record<string, any> = {};
+    const required: string[] = [];
+    const xJopiOrder: string[] = [];
+    
+    // We want to preserve the order of keys as they appear in the descriptor
+    for (const key of Object.keys(schema.desc)) {
+        xJopiOrder.push(key);
+        
+        const field = schema.desc[key];
+        const prop: any = {
+            type: field.type
+        };
+
+        if (field.title) {
+            // If title is an object (Translatable), usually we might pick one or pass it as is.
+            // For simple JSON schema, let's assume it should be string, or we pass the object.
+            // But standard JSON Schema expects string for title.
+            if (typeof field.title === 'string') {
+                prop.title = field.title;
+            } else {
+                 // It's a Translatable object. We might want to serialize it differently or pick a default.
+                 // For now let's pass it, but usually this might break strict JSON schema validators if they expect string.
+                 // However, "title" is just an annotation.
+                 prop.title = field.title;
+            }
+        }
+        
+        // Handle Required
+        if (!field.optional) {
+            required.push(key);
+        }
+        
+        // Handle Types specifics
+        if (field.type === 'number') {
+            const numField = field as ScNumber<any>;
+            
+            // If there's displayType, currency, etc. we move them to x-jopi
+            if (numField.displayType || numField.currency || numField.localFormat) {
+                 prop["x-jopi"] = prop["x-jopi"] || {};
+                 if (numField.displayType) prop["x-jopi"].displayType = numField.displayType;
+                 if (numField.currency) prop["x-jopi"].currency = numField.currency;
+                 if (numField.localFormat) prop["x-jopi"].localFormat = numField.localFormat;
+            }
+        } else if (field.type === 'string') {
+             // const strField = field as ScString<any>;
+             // Jopi schema 'string' doesn't store format, but validation might use regex.
+             // We can assume format: 'email' if we had such metadata, but we don't have it standardly yet.
+        }
+        
+        // Handle onTableRendering -> x-jopi
+        if (field.onTableRendering) {
+            prop["x-jopi"] = prop["x-jopi"] || {};
+            // Filter out undefined values to keep JSON clean
+            for (const [k, v] of Object.entries(field.onTableRendering)) {
+                if (v !== undefined) {
+                    prop["x-jopi"][k] = v;
+                }
+            }
+        }
+        
+        properties[key] = prop;
+    }
+
+    return {
+        type: "object",
+        "x-jopi-order": xJopiOrder,
+        properties,
+        required: required.length > 0 ? required : undefined
+    };
 }
 
 /**

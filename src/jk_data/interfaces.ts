@@ -25,8 +25,7 @@ export type JFieldConstraintType =
     | "$lte"   // Less than or equals
     | "$in"    // In an array of values
     | "$nin"   // Not in an array of values
-    | "$like"  // Like search %endsWith or startsWith%
-    ;
+    | "$like";  // Like search %endsWith or startsWith%
 
 export interface JGlobalFilter {
     field?: string;
