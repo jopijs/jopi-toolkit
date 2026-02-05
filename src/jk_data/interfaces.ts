@@ -8,6 +8,7 @@ export interface JFieldSorting {
 
 export interface IActionContext {
     refresh: () => void;
+    lang: string;
 }
 
 export interface JFieldFilter {
