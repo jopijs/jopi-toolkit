@@ -1,6 +1,4 @@
-import {type Schema} from "jopi-toolkit/jk_schema";
-import type { JopiDataTable, JDataReadParams, JDataReadResult, JRowArrayFilter } from "./interfaces.ts";
-export * from "./interfaces.ts";
+import type { JDataReadResult, JRowArrayFilter } from "./interfaces.ts";
 
 //region Rows Arrays
 
@@ -74,19 +72,6 @@ export function simpleRowArrayFilter(rows: any[], params: JRowArrayFilter): JDat
     }
 
     return {rows, total: totalWithoutPagination, offset};
-}
-
-//endregion
-
-//region JDataBinding
-
-export class JDataBinding_UseArray implements JopiDataTable {
-    public constructor(public readonly schema: Schema, private readonly rows: any[]) {
-    }
-
-    async read(params: JDataReadParams): Promise<JDataReadResult> {
-        return simpleRowArrayFilter(this.rows, params);
-    }
 }
 
 //endregion
