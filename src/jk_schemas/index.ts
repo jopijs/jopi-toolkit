@@ -317,22 +317,10 @@ export function toJsonValidationSchema(schema: Schema): any {
         
         const field = schema.desc[key];
         const prop: any = {
-            type: field.type
+            type: field.type,
+            title: field.title, // JField supports JLocalizedString (object), so we pass it as is.
+            description: field.description
         };
-
-        if (field.title) {
-            // If title is an object (Translatable), usually we might pick one or pass it as is.
-            // For simple JSON schema, let's assume it should be string, or we pass the object.
-            // But standard JSON Schema expects string for title.
-            if (typeof field.title === 'string') {
-                prop.title = field.title;
-            } else {
-                 // It's a Translatable object. We might want to serialize it differently or pick a default.
-                 // For now let's pass it, but usually this might break strict JSON schema validators if they expect string.
-                 // However, "title" is just an annotation.
-                 prop.title = field.title;
-            }
-        }
         
         // Handle Required
         if (!field.optional) {
@@ -343,26 +331,52 @@ export function toJsonValidationSchema(schema: Schema): any {
         if (field.type === 'number') {
             const numField = field as ScNumber<any>;
             
-            // If there's displayType, currency, etc. we move them to x-jopi
-            if (numField.displayType || numField.currency || numField.localFormat) {
-                 prop["x-jopi"] = prop["x-jopi"] || {};
-                 if (numField.displayType) prop["x-jopi"].displayType = numField.displayType;
-                 if (numField.currency) prop["x-jopi"].currency = numField.currency;
-                 if (numField.localFormat) prop["x-jopi"].localFormat = numField.localFormat;
+            // Map validation logic
+            if (numField.minValue !== undefined) prop.minimum = numField.minValue;
+            if (numField.maxValue !== undefined) prop.maximum = numField.maxValue;
+            
+            // Handle Integer vs Number based on allowDecimal (default is usually true for 'number' type generic, but if explicitly false...)
+            // In jk_schemas, explicitly checking strict false might be safer depending on usage rules.
+            // If allowDecimal is false -> integer.
+            if (numField.allowDecimal === false) {
+                prop.type = "integer";
             }
+
+            // Map UI format extensions
+            if (numField.displayType || numField.currency || numField.localFormat) {
+                 prop["x-jopi-table"] = prop["x-jopi-table"] || {};
+                 if (numField.displayType) prop["x-jopi-table"].displayType = numField.displayType;
+                 if (numField.currency) prop["x-jopi-table"].currency = numField.currency;
+                 if (numField.localFormat) prop["x-jopi-table"].localFormat = numField.localFormat;
+            }
+            
+            // Map placeholder to form options
+            if (numField.placeholder) {
+                prop["x-jopi-form"] = prop["x-jopi-form"] || {};
+                prop["x-jopi-form"].placeholder = numField.placeholder;
+            }
+
         } else if (field.type === 'string') {
-             // const strField = field as ScString<any>;
-             // Jopi schema 'string' doesn't store format, but validation might use regex.
-             // We can assume format: 'email' if we had such metadata, but we don't have it standardly yet.
+             const strField = field as ScString<any>;
+             
+             // Map validation logic
+             if (strField.minLength !== undefined) prop.minLength = strField.minLength;
+             if (strField.maxLength !== undefined) prop.maxLength = strField.maxLength;
+             
+             // Map placeholder to form options
+             if (strField.placeholder) {
+                prop["x-jopi-form"] = prop["x-jopi-form"] || {};
+                prop["x-jopi-form"].placeholder = strField.placeholder;
+            }
         }
         
-        // Handle onTableRendering -> x-jopi
+        // Handle onTableRendering -> x-jopi-table
         if (field.onTableRendering) {
-            prop["x-jopi"] = prop["x-jopi"] || {};
+            prop["x-jopi-table"] = prop["x-jopi-table"] || {};
             // Filter out undefined values to keep JSON clean
             for (const [k, v] of Object.entries(field.onTableRendering)) {
                 if (v !== undefined) {
-                    prop["x-jopi"][k] = v;
+                    prop["x-jopi-table"][k] = v;
                 }
             }
         }
@@ -636,7 +650,7 @@ export interface ScNumber<Opt extends boolean = boolean> extends ScField<number,
     errorMessage_dontAllowDecimal?: string;
 
     incrStep?: number;
-    placeholder?: string;
+    placeholder?: Translatable;
 
     /**
      * Allows displaying this value as a simple
